@@ -1,5 +1,9 @@
+# Streamlit Community Cloud friendly.
+# tensorflow-cpu avoids the heavy GPU/CUDA dependencies of the full
+# 'tensorflow' package, which frequently fail to install on Cloud.
+# For local GPU training, swap 'tensorflow-cpu' for 'tensorflow'.
 streamlit>=1.32.0
-tensorflow>=2.15.0
+tensorflow-cpu>=2.16.0
 xgboost>=2.0.0
 scikit-learn>=1.4.0
 pandas>=2.0.0
