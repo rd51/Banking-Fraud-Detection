@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banking Fraud & AML — Deep Learning Prototype Use Case</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8eaf0;
+    --muted: #7a8090;
+    --faint: #3a3f4a;
+    --accent: #4fd1c5;
+    --accent2: #7c3aed;
+    --accent3: #f59e0b;
+    --red: #ef4444;
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'Inter', sans-serif;
+    --display: 'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ─── SCROLLBAR ─── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--faint); border-radius: 2px; }
+
+  /* ─── TOP NAV ─── */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,12,16,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+  .nav-links {
+    display: flex; gap: 1.5rem; list-style: none;
+  }
+  .nav-links a {
+    font-size: 12px; color: var(--muted); text-decoration: none;
+    letter-spacing: 0.04em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  /* ─── HERO ─── */
+  .hero {
+    padding: 5rem 2rem 4rem;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    display: block; width: 32px; height: 1px;
+    background: var(--accent);
+  }
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.5rem;
+    color: #fff;
+  }
+  .hero-title .hl {
+    background: linear-gradient(90deg, var(--accent), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 620px;
+    line-height: 1.75;
+    margin-bottom: 2.5rem;
+  }
+  .algo-chips {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid;
+    letter-spacing: 0.05em;
+  }
+  .chip.cnn  { color: #7c3aed; border-color: rgba(124,58,237,0.35); background: rgba(124,58,237,0.08); }
+  .chip.lstm { color: #4fd1c5; border-color: rgba(79,209,197,0.35); background: rgba(79,209,197,0.08); }
+  .chip.rnn  { color: #3b82f6; border-color: rgba(59,130,246,0.35); background: rgba(59,130,246,0.08); }
+  .chip.dense{ color: #f59e0b; border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
+
+  /* ─── PAIN STATS BAR ─── */
+  .stats-bar {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 2rem;
+  }
+  .stats-inner {
+    max-width: 900px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+  .stat-block {
+    padding: 0 2rem;
+    border-right: 1px solid var(--border);
+  }
+  .stat-block:first-child { padding-left: 0; }
+  .stat-block:last-child { border-right: none; }
+  .stat-val {
+    font-family: var(--display);
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+  .stat-val.red { color: #ef4444; }
+  .stat-val.amber { color: #f59e0b; }
+  .stat-val.teal { color: #4fd1c5; }
+  .stat-label { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .stat-source { font-family: var(--mono); font-size: 10px; color: var(--faint); margin-top: 4px; }
+
+  /* ─── CONTENT LAYOUT ─── */
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+
+  /* ─── SECTION HEADERS ─── */
+  .section-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .section-title {
+    font-family: var(--display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  /* ─── GAP CARDS ─── */
+  .gap-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 3rem;
+  }
+  .gap-card {
+    background: var(--surface);
+    padding: 1.5rem;
+    position: relative;
+  }
+  .gap-number {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--faint);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+  }
+  .gap-sev {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+  }
+  .gap-sev.critical { background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+  .gap-sev.high     { background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.25); }
+  .gap-title-text {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.6rem;
+    line-height: 1.4;
+  }
+  .gap-body {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .gap-body strong { color: var(--text); font-weight: 500; }
+
+  /* ─── ARCHITECTURE ─── */
+  .arch-section { margin-bottom: 3rem; }
+  .arch-branches {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 1.5rem;
+  }
+  .branch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .branch-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .branch-card.cnn::before  { background: #7c3aed; }
+  .branch-card.lstm::before { background: #4fd1c5; }
+  .branch-card.dense::before{ background: #f59e0b; }
+  .branch-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.6rem;
+    font-weight: 500;
+  }
+  .branch-card.cnn  .branch-label { color: #7c3aed; }
+  .branch-card.lstm .branch-label { color: #4fd1c5; }
+  .branch-card.dense .branch-label { color: #f59e0b; }
+  .branch-name {
+    font-size: 14px; font-weight: 600; color: #fff;
+    margin-bottom: 0.5rem;
+  }
+  .branch-input {
+    font-size: 12px; color: var(--muted);
+    margin-bottom: 0.75rem; line-height: 1.5;
+  }
+  .branch-output {
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    color: var(--faint);
+  }
+  .branch-output span { color: var(--text); }
+
+  /* ─── FUSION FLOW ─── */
+  .fusion-box {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .fusion-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+  }
+  .fusion-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .fnode {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .fnode.cnn   { border-color: rgba(124,58,237,0.4); color: #a78bfa; }
+  .fnode.lstm  { border-color: rgba(79,209,197,0.4); color: #4fd1c5; }
+  .fnode.dense { border-color: rgba(245,158,11,0.4); color: #f59e0b; }
+  .fnode.concat{ border-color: rgba(255,255,255,0.2); color: #fff; font-weight: 500; background: rgba(255,255,255,0.04); }
+  .fnode.output{ border-color: rgba(34,197,94,0.4); color: #22c55e; background: rgba(34,197,94,0.06); }
+  .farrow { color: var(--faint); font-size: 16px; }
+
+  /* ─── DATA TABLE ─── */
+  .data-table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 3rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--surface2);
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,0.02); }
+  .td-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .td-badge.cnn  { background: rgba(124,58,237,0.12); color: #a78bfa; border: 1px solid rgba(124,58,237,0.25); }
+  .td-badge.lstm { background: rgba(79,209,197,0.1);  color: #4fd1c5; border: 1px solid rgba(79,209,197,0.25); }
+  .td-badge.dense{ background: rgba(245,158,11,0.1);  color: #f59e0b; border: 1px solid rgba(245,158,11,0.25); }
+  .dataset-name { font-weight: 500; color: #fff; display: block; margin-bottom: 2px; }
+  .dataset-link { font-family: var(--mono); font-size: 11px; color: #3b82f6; text-decoration: none; }
+  .dataset-link:hover { text-decoration: underline; }
+
+  /* ─── COURSE ALIGNMENT ─── */
+  .course-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 3rem;
+  }
+  .course-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .course-day {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    background: rgba(79,209,197,0.08);
+    border: 1px solid rgba(79,209,197,0.2);
+    border-radius: 4px;
+    padding: 3px 7px;
+    white-space: nowrap;
+    margin-top: 2px;
+    letter-spacing: 0.06em;
+  }
+  .course-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.5;
+  }
+  .course-text em {
+    font-style: normal;
+    color: var(--muted);
+    font-size: 12px;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* ─── AGENTIC LAYER ─── */
+  .agent-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 3rem;
+  }
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .agent-icon {
+    font-size: 20px; margin-bottom: 0.6rem;
+  }
+  .agent-name {
+    font-size: 13px; font-weight: 600; color: #fff;
+    margin-bottom: 0.4rem;
+  }
+  .agent-desc {
+    font-size: 12px; color: var(--muted); line-height: 1.6;
+  }
+  .agent-desc strong { color: var(--text); font-weight: 500; }
+  .agent-tag {
+    display: inline-block;
+    margin-top: 0.6rem;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent2);
+    background: rgba(124,58,237,0.08);
+    border: 1px solid rgba(124,58,237,0.2);
+    border-radius: 4px;
+    padding: 2px 7px;
+  }
+
+  /* ─── LAUNCH READINESS ─── */
+  .verdict-card {
+    background: rgba(245,158,11,0.05);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .verdict-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 0.75rem;
+  }
+  .verdict-pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(245,158,11,0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245,158,11,0.3);
+    letter-spacing: 0.06em;
+  }
+  .verdict-title-text {
+    font-size: 14px; font-weight: 600; color: #f59e0b;
+  }
+  .verdict-body-text {
+    font-size: 13px; color: rgba(245,158,11,0.75);
+    line-height: 1.7;
+  }
+
+  /* ─── AI TRENDS ─── */
+  .trend-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 3rem; }
+  .trend-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    display: flex; gap: 14px; align-items: flex-start;
+  }
+  .trend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 6px; flex-shrink: 0;
+  }
+  .trend-dot.teal  { background: #4fd1c5; }
+  .trend-dot.purple{ background: #7c3aed; }
+  .trend-dot.amber { background: #f59e0b; }
+  .trend-dot.blue  { background: #3b82f6; }
+  .trend-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+  .trend-desc  { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+  /* ─── REFERENCES ─── */
+  .ref-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 3rem; }
+  .ref-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 0.75rem 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .ref-num {
+    font-family: var(--mono);
+    font-size: 10px; color: var(--faint);
+    margin-top: 2px; flex-shrink: 0;
+    min-width: 20px;
+  }
+  .ref-content { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .ref-content a { color: #3b82f6; text-decoration: none; }
+  .ref-content a:hover { text-decoration: underline; }
+  .ref-content strong { color: var(--text); font-weight: 500; }
+
+  /* ─── ERROR TARGET BOX ─── */
+  .error-box {
+    background: rgba(34,197,94,0.05);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 3rem;
+    display: flex; gap: 16px; align-items: center;
+  }
+  .error-val {
+    font-family: var(--display);
+    font-size: 2rem; font-weight: 800;
+    color: #22c55e;
+    flex-shrink: 0;
+  }
+  .error-desc { font-size: 13px; color: rgba(34,197,94,0.7); line-height: 1.6; }
+  .error-desc strong { color: #22c55e; font-weight: 500; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--faint);
+    letter-spacing: 0.06em;
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 680px) {
+    .stats-inner { grid-template-columns: 1fr; }
+    .stat-block  { border-right: none; border-bottom: 1px solid var(--border); padding: 1rem 0; }
+    .stat-block:last-child { border-bottom: none; }
+    .gap-grid    { grid-template-columns: 1fr; }
+    .arch-branches { grid-template-columns: 1fr; }
+    .course-grid { grid-template-columns: 1fr; }
+    .agent-grid  { grid-template-columns: 1fr; }
+    nav .nav-links { display: none; }
+  }
+
+  /* ─── PRINT ─── */
+  @media print {
+    body { background: #fff; color: #111; }
+    nav { display: none; }
+    .hero-title .hl { -webkit-text-fill-color: #1d4ed8; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-brand">USE CASE 02 — DEEP LEARNING</span>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#gaps">Gaps</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#data">Data</a></li>
+    <li><a href="#course">Course Alignment</a></li>
+    <li><a href="#agentic">Agentic AI</a></li>
+    <li><a href="#references">References</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">BUSINESS USE CASE · CNN + RNN + LSTM</div>
+  <h1 class="hero-title">Banking Fraud Detection<br>&amp; <span class="hl">Anti-Money Laundering</span></h1>
+  <p class="hero-sub">
+    A tri-modal deep learning prototype that fuses KYC document image analysis,
+    behavioural transaction sequences, and account profile data into a single
+    risk engine — with an agentic layer that auto-drafts SAR reports and
+    routes alerts without human bottlenecks.
+  </p>
+  <div class="algo-chips">
+    <span class="chip cnn">CNN — document forgery</span>
+    <span class="chip lstm">LSTM — transaction sequences</span>
+    <span class="chip rnn">RNN — temporal encoding</span>
+    <span class="chip dense">Dense — account profile</span>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<section class="stats-bar" id="problem">
+  <div class="stats-inner">
+    <div class="stat-block">
+      <div class="stat-val red">$4.6B</div>
+      <div class="stat-label">Global AML fines issued in 2024 alone</div>
+      <div class="stat-source">Fenergo Global AML Report, 2025</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-val amber">+417%</div>
+      <div class="stat-label">Surge in global AML fines — H1 2025 vs H1 2024</div>
+      <div class="stat-source">Fenergo Mid-Year Enforcement Data, 2025</div>
+    </div>
+    <div class="stat-block">
+      <div class="stat-val teal">$3.09B</div>
+      <div class="stat-label">TD Bank fine — largest single AML penalty in US history</div>
+      <div class="stat-source">FinCEN Consent Order 2024-02, October 2024</div>
+    </div>
+  </div>
+</section>
+
+<!-- GAPS -->
+<section class="content" id="gaps">
+  <div class="section-header">
+    <span class="section-tag">// PROBLEM STATEMENT</span>
+    <h2 class="section-title">The gaps this prototype closes</h2>
+  </div>
+
+  <div class="gap-grid">
+    <div class="gap-card">
+      <div class="gap-number">GAP 01</div>
+      <span class="gap-sev critical">CRITICAL</span>
+      <div class="gap-title-text">Rule-based monitoring generates 95%+ false positives</div>
+      <div class="gap-body">
+        Legacy AML systems flag transactions using static thresholds — "flag any transfer above $10K from a high-risk country." The result: <strong>compliance teams spend 90%+ of their time clearing legitimate transactions</strong> while sophisticated layering schemes that stay below individual thresholds slip through undetected. Regulators now explicitly state that static rule sets are no longer tolerable — penalties for transaction monitoring failures <strong>rose 100% year-on-year in 2024</strong>.
+      </div>
+    </div>
+    <div class="gap-card">
+      <div class="gap-number">GAP 02</div>
+      <span class="gap-sev critical">CRITICAL</span>
+      <div class="gap-title-text">No temporal reasoning — each transaction scored in isolation</div>
+      <div class="gap-body">
+        Money laundering is revealed by <strong>sequence, not by individual events</strong>: small deposits → rapid cross-account movement → currency conversion → withdrawal in a different jurisdiction. Rule-based and simple ML systems score each transaction in isolation, permanently blind to the trajectory. <strong>LSTM is specifically required</strong> to model the 90-day behavioural window that reveals layering patterns.
+      </div>
+    </div>
+    <div class="gap-card">
+      <div class="gap-number">GAP 03</div>
+      <span class="gap-sev high">HIGH</span>
+      <div class="gap-title-text">KYC document fraud not integrated with transaction monitoring</div>
+      <div class="gap-body">
+        Banks run document verification at onboarding and transaction monitoring separately — <strong>in isolated silos that never talk to each other</strong>. No deployed system fuses both: a CNN reading document-image anomalies (font inconsistency, metadata tampering in uploaded ID scans) with the LSTM tracking subsequent transaction patterns. This is precisely the seam sophisticated fraud rings exploit.
+      </div>
+    </div>
+    <div class="gap-card">
+      <div class="gap-number">GAP 04</div>
+      <span class="gap-sev high">HIGH</span>
+      <div class="gap-title-text">Black-box model outputs can't generate SAR narratives</div>
+      <div class="gap-body">
+        When a model flags an account, compliance officers must file a Suspicious Activity Report with a <strong>written, human-readable justification</strong>. Deep learning outputs (a fraud score) don't map to SAR narrative requirements. Either officers over-ride model flags — wasting the model — or file incomplete SARs, risking regulatory sanction. <strong>Agentic NLP-generated SAR drafts</strong> are the missing layer the industry has not yet standardised.
+      </div>
+    </div>
+  </div>
+
+<!-- ARCHITECTURE -->
+  <div class="section-header" id="architecture">
+    <span class="section-tag">// MODEL DESIGN</span>
+    <h2 class="section-title">Tri-modal deep learning architecture</h2>
+  </div>
+
+  <div class="arch-section">
+    <div class="arch-branches">
+      <div class="branch-card cnn">
+        <div class="branch-label">BRANCH A · CNN</div>
+        <div class="branch-name">Document anomaly detector</div>
+        <div class="branch-input">
+          Reads uploaded KYC image files — passports, utility bills, company docs. Extracts spatial features: font inconsistency, pixel artefacts, metadata tampering. MobileNet / EfficientNet backbone fine-tuned on forgery datasets. Stride 1–3 convolutions produce feature maps per filter.
+        </div>
+        <div class="branch-output">output → <span>document_anomaly_score [0–1]</span></div>
+      </div>
+      <div class="branch-card lstm">
+        <div class="branch-label">BRANCH B · LSTM RNN</div>
+        <div class="branch-name">Transaction sequence encoder</div>
+        <div class="branch-input">
+          Reads 90-day rolling transaction window: amount, merchant category code, channel, country, time-delta. Each transaction is one timestep. LSTM hidden state carries forward the account's behavioural fingerprint. MinMaxScaler normalises monetary values before input.
+        </div>
+        <div class="branch-output">output → <span>sequence_risk_vector [128-dim]</span></div>
+      </div>
+      <div class="branch-card dense">
+        <div class="branch-label">BRANCH C · DENSE (ANN)</div>
+        <div class="branch-name">Account profile baseline</div>
+        <div class="branch-input">
+          Reads structured account metadata: account age, country risk tier (FATF list), PEP / sanctions flag, customer segment, historical SAR count, KYC tier, product type. MinMaxScaler + one-hot encoding. Dense layers extract latent risk context.
+        </div>
+        <div class="branch-output">output → <span>profile_risk_vector [64-dim]</span></div>
+      </div>
+    </div>
+
+    <div class="fusion-box">
+      <div class="fusion-label">KERAS FUNCTIONAL API — FUSION HEAD</div>
+      <div class="fusion-flow">
+        <div class="fnode cnn">CNN output</div>
+        <div class="farrow">+</div>
+        <div class="fnode lstm">LSTM output</div>
+        <div class="farrow">+</div>
+        <div class="fnode dense">Dense output</div>
+        <div class="farrow">→</div>
+        <div class="fnode concat">Concatenate()</div>
+        <div class="farrow">→</div>
+        <div class="fnode concat">Dense(256, relu)</div>
+        <div class="farrow">→</div>
+        <div class="fnode concat">Dropout(0.3)</div>
+        <div class="farrow">→</div>
+        <div class="fnode output">Fraud risk score + SAR trigger</div>
+      </div>
+    </div>
+
+    <div class="error-box">
+      <div class="error-val">&lt;2–3%</div>
+      <div class="error-desc">
+        <strong>Target model error rate</strong> — as specified in the course (Day 5): "error cannot be more than 2–3%, otherwise you are just burning your cash." Achieved via GridSearchCV hyperparameter tuning across LSTM units (64/128/256), dropout rate (0.2–0.4), window size (30/60/90 days), and learning rate scheduler. IEEE-CIS dataset benchmark achieves ~98.5% AUC on public leaderboard.
+      </div>
+    </div>
+  </div>
+
+<!-- DATA SOURCES -->
+  <div class="section-header" id="data">
+    <span class="section-tag">// DATASETS</span>
+    <h2 class="section-title">Real public data — ready to load in Colab</h2>
+  </div>
+
+  <div class="data-table-wrap" style="margin-bottom:3rem;">
+    <table>
+      <thead>
+        <tr>
+          <th>Branch</th>
+          <th>Dataset</th>
+          <th>What it provides</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="td-badge lstm">LSTM</span></td>
+          <td>
+            <span class="dataset-name">PaySim synthetic mobile money</span>
+            500K+ labelled transactions with fraud flags
+          </td>
+          <td>Mirrors real MPESA distributions. Step-indexed — ideal for LSTM time-window construction. Fraud prevalence ~0.13%: class imbalance challenge included.</td>
+          <td><a class="dataset-link" href="https://www.kaggle.com/datasets/ealaxi/paysim1" target="_blank">kaggle.com/ealaxi/paysim1</a></td>
+        </tr>
+        <tr>
+          <td><span class="td-badge lstm">LSTM</span></td>
+          <td>
+            <span class="dataset-name">IEEE-CIS Fraud Detection</span>
+            590K real-world e-commerce transactions
+          </td>
+          <td>433 features including time-delta (TransactionDT) — natural LSTM sequence variable. Rich merchant category codes for pattern modelling. Public leaderboard for benchmarking.</td>
+          <td><a class="dataset-link" href="https://www.kaggle.com/competitions/ieee-fraud-detection" target="_blank">kaggle.com/ieee-fraud-detection</a></td>
+        </tr>
+        <tr>
+          <td><span class="td-badge lstm">LSTM</span></td>
+          <td>
+            <span class="dataset-name">Elliptic Bitcoin AML Dataset</span>
+            203K bitcoin transactions (labelled illicit/licit)
+          </td>
+          <td>49 time steps covering real laundering patterns. Demonstrates layering behaviour across temporal graph. Best for AML-specific sequence training.</td>
+          <td><a class="dataset-link" href="https://www.kaggle.com/datasets/ellipticco/elliptic-data-set" target="_blank">kaggle.com/ellipticco</a></td>
+        </tr>
+        <tr>
+          <td><span class="td-badge cnn">CNN</span></td>
+          <td>
+            <span class="dataset-name">MIDV-500 / MIDV-2020</span>
+            Real identity document images
+          </td>
+          <td>500 video clips of 50 identity document types with distortions, folds, glare. Used to fine-tune MobileNet on document visual anomaly detection.</td>
+          <td><a class="dataset-link" href="https://arxiv.org/abs/1807.05786" target="_blank">arxiv.org/abs/1807.05786</a></td>
+        </tr>
+        <tr>
+          <td><span class="td-badge cnn">CNN</span></td>
+          <td>
+            <span class="dataset-name">Document Forgery Detection (Kaggle)</span>
+            Labelled real vs forged documents
+          </td>
+          <td>Passport, utility bill, bank statement categories. Provides binary forgery labels for supervised CNN fine-tuning. Directly maps to KYC document types.</td>
+          <td><a class="dataset-link" href="https://www.kaggle.com/search?q=document+forgery+detection" target="_blank">kaggle.com → "document forgery"</a></td>
+        </tr>
+        <tr>
+          <td><span class="td-badge dense">Dense</span></td>
+          <td>
+            <span class="dataset-name">Derived feature engineering</span>
+            From PaySim + IEEE-CIS columns
+          </td>
+          <td>Account age, transaction velocity per 7/30/90 days, country risk tier (mapped from FATF public lists), PEP flag (synthetic), customer segment — all derivable via pandas from existing datasets.</td>
+          <td>Engineered — no additional download needed</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+<!-- COURSE ALIGNMENT -->
+  <div class="section-header" id="course">
+    <span class="section-tag">// ACADEMIC MAPPING</span>
+    <h2 class="section-title">How every course topic slots in</h2>
+  </div>
+
+  <div class="course-grid" style="margin-bottom:3rem;">
+    <div class="course-card">
+      <span class="course-day">DAY 1</span>
+      <div class="course-text">
+        Hyperparameter tuning via GridSearchCV
+        <em>Tune LSTM units (64/128/256), dropout (0.2–0.4), window size (30/60/90d), learning rate — exactly as taught</em>
+      </div>
+    </div>
+    <div class="course-card">
+      <span class="course-day">DAY 1</span>
+      <div class="course-text">
+        NLP keyword extraction + agentic AI
+        <em>Agent reads flagged transaction sequence, extracts key entities, auto-drafts SAR narrative — your Day 1 NLP automation in action</em>
+      </div>
+    </div>
+    <div class="course-card">
+      <span class="course-day">DAY 2</span>
+      <div class="course-text">
+        Convolution, stride, feature maps
+        <em>CNN branch on KYC document images — stride 1/2/3 convolutions produce feature maps that detect font anomalies and pixel artefacts</em>
+      </div>
+    </div>
+    <div class="course-card">
+      <span class="course-day">DAY 3</span>
+      <div class="course-text">
+        Transfer learning — MobileNet / EfficientNet
+        <em>Fine-tune MobileNet backbone on forgery dataset for the CNN document branch — identical to the satellite/flower transfer learning pattern</em>
+      </div>
+    </div>
+    <div class="course-card">
+      <span class="course-day">DAY 4</span>
+      <div class="course-text">
+        Advanced mathematics in the project
+        <em>Derive LSTM forward pass equations (cell state, forget gate, output gate) and attention mechanism over the transaction sequence in the report</em>
+      </div>
+    </div>
+    <div class="course-card">
+      <span class="course-day">DAY 5</span>
+      <div class="course-text">
+        RNN + LSTM RNN, error &lt;2–3%
+        <em>Transaction sequence branch is pure LSTM — target AUC ≥97% on IEEE-CIS benchmark; show precision/recall/F1 against the 2–3% error ceiling</em>
+      </div>
+    </div>
+    <div class="course-card">
+      <span class="course-day">DAY 6</span>
+      <div class="course-text">
+        Transformers + semantic AI (optional extension)
+        <em>Add attention layer over the LSTM output or a BERT encoder on transaction description text — positions the project at the frontier</em>
+      </div>
+    </div>
+    <div class="course-card">
+      <span class="course-day">TOOLS</span>
+      <div class="course-text">
+        Keras.io + Taipy + MCP servers
+        <em>Keras Functional API for the 3-branch fusion model; Taipy for the BI dashboard; MCP for the agentic alert routing and SAR drafting automation</em>
+      </div>
+    </div>
+  </div>
+
+<!-- AGENTIC LAYER -->
+  <div class="section-header" id="agentic">
+    <span class="section-tag">// AGENTIC AI LAYER</span>
+    <h2 class="section-title">What the agent actually does after the model predicts</h2>
+  </div>
+
+  <div class="agent-grid" style="margin-bottom:1.5rem;">
+    <div class="agent-card">
+      <div class="agent-icon">🔀</div>
+      <div class="agent-name">Smart alert routing</div>
+      <div class="agent-desc">
+        When the fusion score crosses a threshold, the agent routes automatically:
+        <strong>score &gt;0.9</strong> → instant freeze queue,
+        <strong>0.6–0.9</strong> → senior analyst review with evidence packet,
+        <strong>&lt;0.6</strong> → auto-clear with audit log.
+        Eliminates &gt;90% of manual triage.
+      </div>
+      <span class="agent-tag">agentic automation</span>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">📋</div>
+      <div class="agent-name">SAR narrative drafting</div>
+      <div class="agent-desc">
+        NLP keyword extraction (Day 1 topic) reads the flagged transaction sequence and CNN anomaly signals, extracts key entities — amounts, dates, geographies, merchant codes — and <strong>auto-drafts a SAR in regulatory format</strong>. Analyst reviews and signs off in one click.
+      </div>
+      <span class="agent-tag">NLP + keyword extraction</span>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">🔄</div>
+      <div class="agent-name">Continuous model retraining</div>
+      <div class="agent-desc">
+        Agent monitors precision / recall on new live cases. When performance drifts below the threshold, it <strong>triggers retraining on fresh labelled data</strong> — directly applying the Day 1 principle: "continuous training is required for the model." Keeps the model current with evolving fraud patterns.
+      </div>
+      <span class="agent-tag">continuous training</span>
+    </div>
+    <div class="agent-card">
+      <div class="agent-icon">🛡️</div>
+      <div class="agent-name">Sanctions & PEP screening agent</div>
+      <div class="agent-desc">
+        On each new onboarding, agent checks customer name + entity against <strong>live OFAC, UN, and EU sanctions lists</strong> via MCP connector. Flags PEP status and adverse media hits. Feeds result directly into the Dense branch account profile before model inference.
+      </div>
+      <span class="agent-tag">MCP servers</span>
+    </div>
+  </div>
+
+<!-- REAL WORLD VERDICT -->
+  <div class="verdict-card">
+    <div class="verdict-header">
+      <span class="verdict-pill">MEDIUM–HIGH READINESS</span>
+      <span class="verdict-title-text">Deployed in parts — tri-modal fusion + agentic SAR drafting is the frontier</span>
+    </div>
+    <p class="verdict-body-text">
+      Major banks (HSBC, JPMorgan, ING) already run LSTM-based transaction monitoring in production. The gaps this prototype closes — fusing KYC document CNN with transaction LSTM and auto-drafting SAR narratives via agentic NLP — are actively being researched but are not yet standard in deployed compliance systems. Regulators are explicitly pushing for it: the EU's new Anti-Money Laundering Authority (AMLA) begins direct supervision in 2027, and the first AMLA-led enforcement cases are expected to make the current penalty baseline look modest. This prototype is positioned precisely at where the industry will be in 2–3 years.
+    </p>
+  </div>
+
+<!-- AI TRENDS -->
+  <div class="section-header">
+    <span class="section-tag">// REAL-TIME AI LANDSCAPE</span>
+    <h2 class="section-title">Where this sits in the 2025–26 AI world</h2>
+  </div>
+
+  <div class="trend-list" style="margin-bottom:3rem;">
+    <div class="trend-item">
+      <div class="trend-dot teal"></div>
+      <div>
+        <div class="trend-title">LSTM is the fastest-growing architecture in financial fraud detection (2022–2024)</div>
+        <div class="trend-desc">A systematic review of 5 years of DL fraud detection literature (arXiv 2025) confirms LSTM shows the most significant and sustained growth, culminating in a sharp increase from 2022 to 2024 — driven by the sequential nature of fraud datasets. Your project sits at the peak of this curve.</div>
+      </div>
+    </div>
+    <div class="trend-item">
+      <div class="trend-dot purple"></div>
+      <div>
+        <div class="trend-title">Explainability (XAI) is now a regulatory requirement, not a nice-to-have</div>
+        <div class="trend-desc">The FATF has identified explainability gaps in AML AI as a critical weakness. The ScienceDirect hybrid DL-XAI paper (Jan 2026) shows that combining feature fusion with interpretability outputs is where the field is heading. Your agentic SAR-drafting layer directly addresses this gap.</div>
+      </div>
+    </div>
+    <div class="trend-item">
+      <div class="trend-dot amber"></div>
+      <div>
+        <div class="trend-title">Digital assets and fintechs are the fastest-growing enforcement target</div>
+        <div class="trend-desc">Digital asset firms represent almost one quarter of the top 10 highest-value AML fines in 2025 (ComplyAdvantage). OKX paid $504M. Coinbase Europe was penalised for 176 billion EUR in unchecked transactions. A system like this prototype is exactly what these institutions lack.</div>
+      </div>
+    </div>
+    <div class="trend-item">
+      <div class="trend-dot blue"></div>
+      <div>
+        <div class="trend-title">EU AMLA (2027) will make European enforcement match US intensity</div>
+        <div class="trend-desc">The EU's Anti-Money Laundering Authority begins direct supervision in 2027. Current North American / rest-of-world enforcement split (95%/5%) will narrow sharply from 2028. Banks and fintechs in EMEA — including UAE institutions with EU operations — are building now to be ready. This prototype can be pitched to any compliance team in that pipeline.</div>
+      </div>
+    </div>
+  </div>
+
+<!-- REFERENCES -->
+  <div class="section-header" id="references">
+    <span class="section-tag">// REFERENCES</span>
+    <h2 class="section-title">Verified sources &amp; datasets</h2>
+  </div>
+
+  <div class="ref-list">
+    <div class="ref-item">
+      <div class="ref-num">[1]</div>
+      <div class="ref-content">
+        <strong>Fenergo — Global AML Regulatory Penalties 2025</strong> (Feb 2026)<br>
+        Global AML fines totalled $3.8B in 2025, down from $4.6B in 2024; H1 2025 up 417% vs H1 2024<br>
+        <a href="https://resources.fenergo.com/newsroom/global-financial-regulatory-penalties-fall-by-18-in-2025-as-enforcement-shifts-from-us-to-emea-and-apac" target="_blank">fenergo.com/newsroom/global-financial-regulatory-penalties-2025</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[2]</div>
+      <div class="ref-content">
+        <strong>FluxForce AI — AML Fines 2024 Statistics</strong><br>
+        $4.6B total 2024; penalties for monitoring failures rose 100% YoY; TD Bank $3.09B case detail<br>
+        <a href="https://www.fluxforce.ai/statistics/aml-fines-2024" target="_blank">fluxforce.ai/statistics/aml-fines-2024</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[3]</div>
+      <div class="ref-content">
+        <strong>ComplyAdvantage — Biggest AML Fines in 2025</strong><br>
+        OKX $504M, Nationwide £44M, Barclays £42M; digital assets = 25% of top-10 fines; enforcement trends<br>
+        <a href="https://complyadvantage.com/insights/the-biggest-aml-fines-in-2025/" target="_blank">complyadvantage.com/insights/the-biggest-aml-fines-in-2025</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[4]</div>
+      <div class="ref-content">
+        <strong>Algorithms Journal (MDPI) — Survey of ML/DL for Financial Fraud Detection (May 2026)</strong><br>
+        Comprehensive review of CNN, RNN, LSTM, GNN architectures; real-world deployment challenges; bibliometric analysis<br>
+        <a href="https://doi.org/10.3390/a19050354" target="_blank">doi.org/10.3390/a19050354</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[5]</div>
+      <div class="ref-content">
+        <strong>ScienceDirect — Hybrid Deep Learning for AML: Feature Fusion + XAI (Jan 2026)</strong><br>
+        Unsupervised detection of emerging laundering schemes via feature fusion and explainable AI; FATF gap analysis<br>
+        <a href="https://www.sciencedirect.com/science/article/pii/S2666827026000216" target="_blank">sciencedirect.com/article/pii/S2666827026000216</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[6]</div>
+      <div class="ref-content">
+        <strong>ResearchGate — LSTM-CNN Hybrid for Internal Bank Fraud Detection (JISEM 2024)</strong><br>
+        LSTM-CNN-anomaly detection system; gaps in prior work (no temporal factors, high false positives identified)<br>
+        <a href="https://www.researchgate.net/publication/391435518_A_Deep_Learning_Based_Hybrid_Model_Using_LSTM_and_CNN_Techniques_for_Automated_Internal_Fraud_Detection_in_Banking_Systems" target="_blank">researchgate.net/publication/391435518</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[7]</div>
+      <div class="ref-content">
+        <strong>arXiv — Year-over-Year Developments in Financial Fraud Detection via Deep Learning (Jul 2025)</strong><br>
+        5-year systematic review; LSTM fastest-growing architecture 2022–2024; trend analysis across 21 DL studies<br>
+        <a href="https://arxiv.org/html/2502.00201v2" target="_blank">arxiv.org/html/2502.00201v2</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[8]</div>
+      <div class="ref-content">
+        <strong>ScienceDirect — Deep Learning in Financial Fraud Detection: Innovations &amp; Challenges (Aug 2025)</strong><br>
+        CNN for high-dimensional feature extraction; LSTM/RNN for sequential transaction histories; Autoencoder-LSTM hybrid<br>
+        <a href="https://www.sciencedirect.com/science/article/pii/S2666764925000372" target="_blank">sciencedirect.com/article/pii/S2666764925000372</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[9]</div>
+      <div class="ref-content">
+        <strong>Dataset — PaySim Synthetic Mobile Money (Kaggle)</strong><br>
+        500K+ transactions, fraud labels, step-indexed time — primary LSTM training data<br>
+        <a href="https://www.kaggle.com/datasets/ealaxi/paysim1" target="_blank">kaggle.com/datasets/ealaxi/paysim1</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[10]</div>
+      <div class="ref-content">
+        <strong>Dataset — IEEE-CIS Fraud Detection (Kaggle)</strong><br>
+        590K real-world transactions, 433 features, TransactionDT time variable — LSTM sequence training + benchmarking<br>
+        <a href="https://www.kaggle.com/competitions/ieee-fraud-detection" target="_blank">kaggle.com/competitions/ieee-fraud-detection</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[11]</div>
+      <div class="ref-content">
+        <strong>Dataset — Elliptic Bitcoin AML Dataset (Kaggle)</strong><br>
+        203K bitcoin transactions, 49 time steps, illicit/licit labels — temporal graph for AML sequence modelling<br>
+        <a href="https://www.kaggle.com/datasets/ellipticco/elliptic-data-set" target="_blank">kaggle.com/datasets/ellipticco/elliptic-data-set</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[12]</div>
+      <div class="ref-content">
+        <strong>Dataset — MIDV-500 Identity Document Dataset</strong><br>
+        500 video clips, 50 document types — CNN document anomaly fine-tuning<br>
+        <a href="https://arxiv.org/abs/1807.05786" target="_blank">arxiv.org/abs/1807.05786</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[13]</div>
+      <div class="ref-content">
+        <strong>TensorFlow CNN Tutorial (referenced in course)</strong><br>
+        <a href="https://www.tensorflow.org/tutorials/images/cnn" target="_blank">tensorflow.org/tutorials/images/cnn</a>
+      </div>
+    </div>
+    <div class="ref-item">
+      <div class="ref-num">[14]</div>
+      <div class="ref-content">
+        <strong>Keras.io — Functional API (multi-input fusion model)</strong><br>
+        <a href="https://keras.io/guides/functional_api/" target="_blank">keras.io/guides/functional_api</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  USE CASE 02 · BANKING FRAUD &amp; AML · DEEP LEARNING (CNN + RNN + LSTM) · PREPARED FOR COURSE SUBMISSION
+</footer>
+
+</body>
+</html>
